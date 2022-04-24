@@ -4,7 +4,7 @@ from abc import abstractmethod
 class AbstractScaler():
     @abstractmethod
     def fit(self, x):
-        pass
+        return self
 
     @abstractmethod
     def transform(self, x):
@@ -22,6 +22,7 @@ class MinMaxScaler(AbstractScaler):
     def fit(self, x):
         self.max = x.max(axis=0)
         self.min = x.min(axis=0)
+        return self
 
     def transform(self, x):
         return (x - self.min) / (self.max - self.min)
@@ -34,7 +35,7 @@ class IdentityScaler(AbstractScaler):
         pass
 
     def fit(self, x):
-        return x
+        return self
 
     def transform(self, x):
         return x

@@ -5,7 +5,7 @@ from . import base
 from .. import functions as functions
 from ml.algorithms.normalization import IdentityScaler
 
-class AbstractLinear(base.AbstractModel):
+class Linear(base.AbstractModel):
     def default_activation_function(self, x):
         return x
 
@@ -15,7 +15,7 @@ class AbstractLinear(base.AbstractModel):
     def __init__(self, solver, transformation_function=None, activation_function=None, dataScaler=IdentityScaler):
 
         params = None
-        super(AbstractLinear, self).__init__(params)
+        super(Linear, self).__init__(params)
 
         # function that transforms inputs
         if transformation_function is None:
@@ -38,8 +38,8 @@ class AbstractLinear(base.AbstractModel):
     def fit(self, inputs, outputs):
         inputs = self.transformation_function(inputs)
         
-        inputs = self.inputs_scaler.fit(inputs)
-        outputs = self.outputs_scaler.fit(outputs)
+        inputs = self.inputs_scaler.fit(inputs).transform(inputs)
+        outputs = self.outputs_scaler.fit(outputs).transform(outputs)
         
         inputs = np.c_[np.ones(inputs.shape[0]), inputs]
 
@@ -80,11 +80,11 @@ class AbstractLinear(base.AbstractModel):
     def set_weights(self, weights):
         self.params = weights.copy()
 
-class LinearRegression(AbstractLinear):
+class LinearRegression(Linear):
     def __init__(self, solver, dataScaler=IdentityScaler):
         super(LinearRegression, self).__init__(solver, dataScaler=dataScaler)
 
-class PolynomialRegression(AbstractLinear):
+class PolynomialRegression(Linear):
     def polynomial_features(self, x):
         p = x.copy()
 
@@ -96,3 +96,12 @@ class PolynomialRegression(AbstractLinear):
     def __init__(self, solver, degree, dataScaler=IdentityScaler):
         super(PolynomialRegression, self).__init__(solver, transformation_function = self.polynomial_features, dataScaler=dataScaler)
         self.degree = degree
+
+class LogisticRegression(Linear):
+    def sigmoid(self, x):
+        z = np.exp(-x)
+        sig = 1 / (1 + z)
+        return sig
+
+    def __init__(self, solver, dataScaler=IdentityScaler):
+        super(PolynomialRegression, self).__init__(solver, activation_function= self.sigmoid, dataScaler=dataScaler)
