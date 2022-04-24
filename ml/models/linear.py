@@ -117,6 +117,6 @@ class PolynomialRegression(AbstractLinear):
 
         y = x @ self.get_weights().T
 
-        if self.outputs_scaler is not None:
+        if self.outputs_scaler is not None and self.trained:
             return self.outputs_scaler.inverse_transform(y)
         return y

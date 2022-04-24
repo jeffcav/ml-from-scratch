@@ -16,8 +16,9 @@ class AbstractSolver:
 
 
 class OrdinaryLeastSquares(AbstractSolver):
-    def __init__(self):
+    def __init__(self, regularization=0.0):
         super().__init__()
+        self.regularization = regularization
 
     def solve(self, model, inputs, outputs):
         """ 
@@ -29,8 +30,9 @@ class OrdinaryLeastSquares(AbstractSolver):
             outputs (numpy.Array): array of outputs for each input
         """
 
-        w = (np.linalg.inv(inputs.T @ inputs) @ inputs.T) @ outputs
-        model.set_weights(w.T)
+        n = inputs.shape[1]
+        W = ((np.linalg.pinv(inputs.T @ inputs + (self.regularization * np.identity(n)))) @ inputs.T) @ outputs
+        model.set_weights(W.T)
 
 class AbstractGradientDescent(AbstractSolver):
     def __init__(self, epochs, learning_rate, regularization) -> None:
@@ -67,9 +69,10 @@ class GradientDescent(AbstractGradientDescent):
             predictions = model.predict(inputs)
             error = outputs - predictions
 
-            # support for the gradient of more activation
-            # functions is planned for future releases
-            gradients = (inputs * error).mean(axis=0, keepdims=True)
+            regularization_term = self.regularization * weights
+            regularization_term[0,0] = 0.0
+            
+            gradients = (inputs * error).mean(axis=0, keepdims=True) - regularization_term
             weights += self.learning_rate * gradients
 
             epoch_error = rmse(outputs, predictions)
@@ -108,7 +111,10 @@ class StochasticGradientDescent(AbstractGradientDescent):
                 prediction = model.predict(inputs[i])
                 error = outputs[i] - prediction
 
-                gradients = (inputs[i] * error)
+                regularization_term = self.regularization * weights
+                regularization_term[0,0] = 0.0
+
+                gradients = (inputs[i] * error) - regularization_term
                 weights += (self.learning_rate * gradients)
 
             predictions = model.predict(inputs)
