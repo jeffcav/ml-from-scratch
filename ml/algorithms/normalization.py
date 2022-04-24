@@ -1,5 +1,20 @@
 
-class MinMaxScaler():
+from abc import abstractmethod
+
+class AbstractScaler():
+    @abstractmethod
+    def fit(self, x):
+        pass
+
+    @abstractmethod
+    def transform(self, x):
+        pass
+
+    @abstractmethod
+    def inverse_transform(self, x):
+        pass
+
+class MinMaxScaler(AbstractScaler):
     def __init__(self):
         self.max = 1
         self.min = 0
@@ -13,3 +28,16 @@ class MinMaxScaler():
 
     def inverse_transform(self, x):
         return (x * (self.max - self.min)) + self.min
+
+class IdentityScaler(AbstractScaler):
+    def __init__(self):
+        pass
+
+    def fit(self, x):
+        return x
+
+    def transform(self, x):
+        return x
+
+    def inverse_transform(self, x):
+        return x

@@ -31,8 +31,7 @@ class OrdinaryLeastSquares(AbstractSolver):
         """
 
         n = inputs.shape[1]
-        W = ((np.linalg.pinv(inputs.T @ inputs + (self.regularization * np.identity(n)))) @ inputs.T) @ outputs
-        model.set_weights(W.T)
+        model.params = (((np.linalg.pinv(inputs.T @ inputs + (self.regularization * np.identity(n)))) @ inputs.T) @ outputs).T
 
 class AbstractGradientDescent(AbstractSolver):
     def __init__(self, epochs, learning_rate, regularization) -> None:
@@ -61,19 +60,16 @@ class GradientDescent(AbstractGradientDescent):
 
         """
 
-        weights = model.get_weights()
-        activation = model.get_activation_function()
-
         errors = []
         for _ in range(self.epochs):
             predictions = model.predict(inputs)
             error = outputs - predictions
 
-            regularization_term = self.regularization * weights
+            regularization_term = self.regularization * model.params
             regularization_term[0,0] = 0.0
             
             gradients = (inputs * error).mean(axis=0, keepdims=True) - regularization_term
-            weights += self.learning_rate * gradients
+            model.params += self.learning_rate * gradients
 
             epoch_error = rmse(outputs, predictions)
             errors.append(epoch_error)
@@ -96,9 +92,6 @@ class StochasticGradientDescent(AbstractGradientDescent):
             errors (array): trainning errors at each epoch
 
         """
-        
-        weights = model.get_weights()
-        activation = model.get_activation_function()
 
         errors = []
         for _ in range(self.epochs):
@@ -111,11 +104,11 @@ class StochasticGradientDescent(AbstractGradientDescent):
                 prediction = model.predict(inputs[i])
                 error = outputs[i] - prediction
 
-                regularization_term = self.regularization * weights
+                regularization_term = self.regularization * model.params
                 regularization_term[0,0] = 0.0
 
                 gradients = (inputs[i] * error) - regularization_term
-                weights += (self.learning_rate * gradients)
+                model.params += (self.learning_rate * gradients)
 
             predictions = model.predict(inputs)
             epoch_error = rmse(outputs, predictions)

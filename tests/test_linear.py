@@ -26,8 +26,8 @@ def test_linear_regression(solver):
     linreg = LinearRegression(solver)
     linreg.fit(x, y)
 
-    assert linreg.get_weights().shape == expected.shape
-    assert np.allclose(linreg.get_weights(), expected) == True
+    assert linreg.params.shape == expected.shape
+    assert np.allclose(linreg.params, expected) == True
 
 @pytest.mark.parametrize(
     "solver", [
@@ -52,8 +52,8 @@ def test_polynomial_regression(solver):
     polyreg = PolynomialRegression(solver, 1)
     polyreg.fit(x, y)
 
-    assert polyreg.get_weights().shape == expected.shape
-    assert np.allclose(polyreg.get_weights(), expected) == True
+    assert polyreg.params.shape == expected.shape
+    assert np.allclose(polyreg.params, expected) == True
 
 @pytest.mark.parametrize(
     "solver", [OrdinaryLeastSquares()]
@@ -75,5 +75,5 @@ def test_polynomial_regression_with_degree_2(solver):
     polyreg = PolynomialRegression(solver, 2)
     polyreg.fit(x, y)
 
-    assert polyreg.get_weights().shape == expected.shape
-    assert np.allclose(polyreg.get_weights(), expected) == True
+    assert polyreg.params.shape == expected.shape
+    assert np.allclose(polyreg.params, expected) == True
