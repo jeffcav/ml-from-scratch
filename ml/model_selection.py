@@ -62,5 +62,4 @@ class GridSearchCV:
                 cost = rmse(Y_test, m.predict(X_test))
                 model_cost[i] += cost
 
-        print("Average cost:", model_cost / num_folds)
         return self.candidates[np.argmin(model_cost / num_folds)]
