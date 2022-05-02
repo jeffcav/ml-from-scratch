@@ -29,21 +29,38 @@ class Kfold:
             
             begin = end
 
-class GridSearch:
+class GridSearchCV:
+    MODEL_IDX = 0
+    MODEL_ARGS_IDX = 1
+
     def __init__(self) -> None:
-        self.entries = []
+        self.candidates = []
 
     def add(self, model, model_args):
-        self.entries.append((model, model_args))
+        self.candidates.append((model, model_args))
 
-    def search(self, X_train, y_train, num_folds):
-        for i in range(len(self.entries)):
-            model = self.entries[i][0]
-            model_args = self.entries[i][1]
+    def search(self, inputs, outputs, num_folds=5, shuffle=True):
+        model_cost = np.full(len(self.candidates), 0.0)
 
-            m = model(**model_args)
-            m.fit(X_train, y_train)
+        kfold = Kfold(num_folds)
+        for train_idx, test_idx in kfold.split(inputs.shape[0], shuffle):
+            X_train = inputs[train_idx]
+            Y_train = outputs[train_idx]
 
-            y_hat = m.predict(X_cv)
-            cv_rmse = rmse(y_cv, y_hat)
-            print(cv_rmse)
+            X_test = inputs[test_idx]
+            Y_test = outputs[test_idx]
+
+            for i in range(len(self.candidates)):
+                candidate = self.candidates[i]
+
+                model = candidate[GridSearchCV.MODEL_IDX]
+                model_args = candidate[GridSearchCV.MODEL_ARGS_IDX]
+
+                m = model(**model_args)
+                m.fit(X_train, Y_train)
+
+                cost = rmse(Y_test, m.predict(X_test))
+                model_cost[i] += cost
+
+        print("Average cost:", model_cost / num_folds)
+        return self.candidates[np.argmin(model_cost / num_folds)]
