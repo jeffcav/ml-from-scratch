@@ -1,16 +1,36 @@
 import numpy as np
 
-def mse(a, b):
-    return ((a-b)**2).mean()
+from .functions.metrics.classification import BinaryAccuracy, F1Score, Precision, Recall
 
-def rmse(a, b):
-    return np.sqrt(((a-b)**2).mean())
-
-class Stats:
+class ClassificationStats:
     def __init__(self) -> None:
-        self._mse = []
-        self._rmse = []
+        self.n = 0
 
-    def add(self, output, prediction):
-        self._mse.appen(mse(output, prediction))
-        self._rmse.appen(rmse(output, prediction))
+        self.stats = {
+            "values": {
+                "f1": [],
+                "recall": [],
+                "precision": [],
+                "binary_accuracy": []
+            }
+        }
+
+    def update_values(self, expected, predicted):
+        self.stats["values"]["f1"].append(
+            F1Score().measure(expected, np.round(predicted))
+        )
+
+        self.stats["values"]["recall"].append(
+            Recall().measure(expected, np.round(predicted))
+        )
+
+        self.stats["values"]["precision"].append(
+            Precision().measure(expected, np.round(predicted))
+        )
+
+        self.stats["values"]["binary_accuracy"].append(
+            BinaryAccuracy().measure(expected, np.round(predicted))
+        )
+
+    def add(self, expected, predicted):
+        self.update_values(expected, predicted)

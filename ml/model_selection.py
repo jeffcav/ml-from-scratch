@@ -1,5 +1,6 @@
 import numpy as np
-from ml.stats import rmse
+
+from .functions.metrics.regression import RMSE
 
 class Kfold:
     def __init__(self, num_folds) -> None:
@@ -32,13 +33,19 @@ class GridSearchCV:
     MODEL_IDX = 0
     MODEL_ARGS_IDX = 1
 
-    def __init__(self) -> None:
+    def __init__(self, stats_generator=None) -> None:
         self.candidates = []
+
+        self.stats_generator = stats_generator
+        self.stats = []
 
     def add(self, model, model_args):
         self.candidates.append((model, model_args))
 
-    def search(self, inputs, outputs, num_folds=5, shuffle=True):
+        if self.stats_generator is not None:
+            self.stats.append(self.stats_generator())
+
+    def search(self, inputs, outputs, num_folds=5, score=RMSE(), score_minimize=True, shuffle=True):
         model_cost = np.full(len(self.candidates), 0.0)
 
         kfold = Kfold(num_folds)
@@ -58,7 +65,16 @@ class GridSearchCV:
                 m = model(**model_args)
                 m.fit(X_train, Y_train)
 
-                cost = rmse(Y_test, m.predict(X_test))
-                model_cost[i] += cost
+                Y_predicted = m.predict(X_test)
+                model_cost[i] += score.measure(Y_test, Y_predicted)
 
-        return self.candidates[np.argmin(model_cost / num_folds)]
+                if self.stats_generator is not None:
+                    self.stats[i].add(Y_test, Y_predicted)
+
+        mean_cost = model_cost / num_folds
+        if score_minimize:
+            self.index_of_best = np.argmin(mean_cost)
+        else:
+            self.index_of_best = np.argmax(mean_cost)
+
+        return self.candidates[self.index_of_best]
