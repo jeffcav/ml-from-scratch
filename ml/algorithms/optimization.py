@@ -2,9 +2,7 @@ import numpy as np
 from abc import abstractmethod
 
 from .. import models
-
-def rmse(y, y_hat):
-    return np.sqrt(((y-y_hat)**2).mean())
+from .. functions.metrics.regression import RMSE
 
 class AbstractSolver:
     def __init__(self):
@@ -34,8 +32,9 @@ class OrdinaryLeastSquares(AbstractSolver):
         model.params = (((np.linalg.pinv(inputs.T @ inputs + (self.regularization * np.identity(n)))) @ inputs.T) @ outputs).T
 
 class AbstractGradientDescent(AbstractSolver):
-    def __init__(self, epochs, learning_rate, regularization) -> None:
+    def __init__(self, epochs, learning_rate, regularization, metrics) -> None:
         self.epochs = epochs
+        self.metrics = metrics
         self.learning_rate = learning_rate
         self.regularization = regularization
 
@@ -44,8 +43,8 @@ class AbstractGradientDescent(AbstractSolver):
         pass
 
 class GradientDescent(AbstractGradientDescent):
-    def __init__(self, epochs, learning_rate, regularization) -> None:
-        super(GradientDescent, self).__init__(epochs, learning_rate, regularization)
+    def __init__(self, epochs, learning_rate, regularization, metrics=RMSE()) -> None:
+        super(GradientDescent, self).__init__(epochs, learning_rate, regularization, metrics)
 
     def solve(self, model, inputs, outputs):
         """
@@ -60,25 +59,27 @@ class GradientDescent(AbstractGradientDescent):
 
         """
 
-        errors = []
+        training_measurements = []
         for _ in range(self.epochs):
             predictions = model.predict(inputs)
             error = outputs - predictions
 
             regularization_term = self.regularization * model.params
             regularization_term[0,0] = 0.0
-            
+
             gradients = (inputs * error).mean(axis=0, keepdims=True) - regularization_term
             model.params += self.learning_rate * gradients
 
-            epoch_error = rmse(outputs, predictions)
-            errors.append(epoch_error)
+            # keep track of training quality
+            predictions = model.predict(inputs)
+            epoch_measurement = self.metrics.measure(outputs, predictions)
+            training_measurements.append(epoch_measurement)
 
-        return errors
+        return training_measurements
 
 class StochasticGradientDescent(AbstractGradientDescent):
-    def __init__(self, epochs, learning_rate, regularization) -> None:
-        super(StochasticGradientDescent, self).__init__(epochs, learning_rate, regularization)
+    def __init__(self, epochs, learning_rate, regularization, metrics=RMSE()) -> None:
+        super(StochasticGradientDescent, self).__init__(epochs, learning_rate, regularization, metrics)
 
     def solve(self, model, inputs, outputs):
         """
@@ -93,7 +94,7 @@ class StochasticGradientDescent(AbstractGradientDescent):
 
         """
 
-        errors = []
+        training_measurements = []
         for _ in range(self.epochs):
             # shuffle data
             shuffle = np.random.permutation(inputs.shape[0])
@@ -110,8 +111,9 @@ class StochasticGradientDescent(AbstractGradientDescent):
                 gradients = (inputs[i] * error) - regularization_term
                 model.params += (self.learning_rate * gradients)
 
+            # keep track of training quality
             predictions = model.predict(inputs)
-            epoch_error = rmse(outputs, predictions)
-            errors.append(epoch_error)
+            epoch_measurement = self.metrics.measure(outputs, predictions)
+            training_measurements.append(epoch_measurement)
 
-        return errors
+        return training_measurements

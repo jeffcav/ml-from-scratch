@@ -50,18 +50,14 @@ class Linear(base.AbstractModel):
         self.params = weights
         
         errors = self.solver.solve(self, inputs, outputs)
-        self.trained = True
 
+        self.trained = True
         return errors
 
     def predict(self, x):
         if self.trained:
             x = self.transformation_function(x)
-
-        if self.trained:
             x = self.inputs_scaler.transform(x)
-
-        if self.trained:
             x = np.c_[np.ones(x.shape[0]), x]
 
         y = self.activation_function(x @ self.params.T)
@@ -94,7 +90,7 @@ class PolynomialRegression(Linear):
         return p
 
     def __init__(self, solver, degree, dataScaler=IdentityScaler):
-        super(PolynomialRegression, self).__init__(solver, transformation_function = self.polynomial_features, dataScaler=dataScaler)
+        super(PolynomialRegression, self).__init__(solver, transformation_function=self.polynomial_features, dataScaler=dataScaler)
         self.degree = degree
 
 class LogisticRegression(Linear):
@@ -104,4 +100,4 @@ class LogisticRegression(Linear):
         return sig
 
     def __init__(self, solver, dataScaler=IdentityScaler):
-        super(PolynomialRegression, self).__init__(solver, activation_function= self.sigmoid, dataScaler=dataScaler)
+        super(LogisticRegression, self).__init__(solver, activation_function=self.sigmoid, dataScaler=dataScaler)
