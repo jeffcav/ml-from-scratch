@@ -101,3 +101,12 @@ class LogisticRegression(Linear):
 
     def __init__(self, solver, dataScaler=IdentityScaler):
         super(LogisticRegression, self).__init__(solver, activation_function=self.sigmoid, dataScaler=dataScaler)
+
+    def predict(self, inputs):
+        if self.trained:
+            return np.round(super().predict(inputs))
+        else:
+            return super().predict(inputs)
+
+    def predict_proba(self, inputs):
+        return super().predict(inputs)
