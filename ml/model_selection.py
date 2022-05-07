@@ -1,5 +1,7 @@
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 from .functions.metrics.regression import RMSE
 
 class Kfold:
@@ -64,7 +66,7 @@ class GridSearchCV:
 
                 m = model(**model_args)
                 m.fit(X_train, Y_train)
-
+                
                 Y_predicted = m.predict(X_test)
                 model_cost[i] += score.measure(Y_test, Y_predicted)
 
@@ -77,4 +79,7 @@ class GridSearchCV:
         else:
             self.index_of_best = np.argmax(mean_cost)
 
+        self.best_model = self.candidates[self.index_of_best][GridSearchCV.MODEL_IDX]
+        self.best_model_params = self.candidates[self.index_of_best][GridSearchCV.MODEL_ARGS_IDX]
+        
         return self.candidates[self.index_of_best]

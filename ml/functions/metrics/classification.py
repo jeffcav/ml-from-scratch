@@ -3,11 +3,14 @@ import numpy as np
 from .abstract import AbstractMeasure
 
 class BinaryAccuracy(AbstractMeasure):
-    def measure(self, a, b):
-        return np.mean(np.round(a) == np.round(b))
+    def measure(self, y_truth, y_estimated):
+        y_estimated = np.round(y_estimated)
+        return np.mean(np.round(y_truth) == np.round(y_estimated))
 
 class Recall(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
+        y_estimated = np.round(y_estimated)
+
         true_positives = np.sum(np.logical_and((y_estimated == 1), (y_truth == 1)))
         false_negatives = np.sum(np.logical_and((y_estimated == 0), (y_truth == 1)))
 
@@ -19,6 +22,8 @@ class Recall(AbstractMeasure):
 
 class Precision(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
+        y_estimated = np.round(y_estimated)
+
         true_positives = np.sum(np.logical_and((y_estimated == 1), (y_truth == 1)))
         false_positives = np.sum(np.logical_and((y_estimated == 1), (y_truth == 0)))
 
@@ -30,6 +35,8 @@ class Precision(AbstractMeasure):
 
 class F1Score(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
+        y_estimated = np.round(y_estimated)
+
         precision = Precision().measure(y_truth, y_estimated)
         recall = Recall().measure(y_truth, y_estimated)
 
