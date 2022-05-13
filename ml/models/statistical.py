@@ -3,9 +3,10 @@ import numpy as np
 from .base import AbstractModel
 from ml.algorithms.normalization import IdentityScaler
 
+
 class GaussianDiscriminantAnalysis(AbstractModel):
 
-    def __init__(self, dataScaler=IdentityScaler):
+    def __init__(self):
         params = None
         super(GaussianDiscriminantAnalysis, self).__init__(params)
 
@@ -31,6 +32,7 @@ class GaussianDiscriminantAnalysis(AbstractModel):
 
 
     def fit(self, inputs, outputs):
+        self.num_classes = len(np.unique(outputs))
         self.prob_classes = self.compute_classes_probabilities(outputs)
         self.cov_matrices = self.compute_cov_matrices(inputs, outputs)
         self.means = self.compute_means(inputs, outputs)
@@ -38,11 +40,21 @@ class GaussianDiscriminantAnalysis(AbstractModel):
         self.trained = True
 
     def predict(self, x):
-        p0 = np.log(self.prob_classes)
+        y_pred = []
 
-        p1 = -1/2 * np.log(np.linalg.det(self.cov_matrices))
-        
-        distance_from_mean = x - self.means
-        p2 = -1/2 * (distance_from_mean @ np.linalg.pinv(self.cov_matrices) @ distance_from_mean.T)
+        for i in range(x.shape[0]):
+            probs = []
 
-        return np.argmax(p0 + p1 + p2)
+            for k in range(self.num_classes):
+                p0 = np.log(self.prob_classes[k])
+
+                p1 = -0.5 * np.log(np.linalg.det(self.cov_matrices[k]))
+
+                distance_from_mean = x[i] - self.means[k]
+                p2 = -(0.5) * (distance_from_mean @ (np.linalg.pinv(self.cov_matrices[k]) @ distance_from_mean.T))
+
+                probs.append(p0+p1+p2)
+
+            y_pred.append(np.argmax(probs))
+
+        return np.array(y_pred)
