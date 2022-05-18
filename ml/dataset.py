@@ -1,13 +1,21 @@
 import math
 import numpy as np
 
-def load_csv(csv_filename, delimiter=','):
+def load_csv(csv_filename, delimiter=',', remove_duplicates=False, remove_inconsistent_labels=False):
     ds = np.genfromtxt(csv_filename, delimiter=delimiter)
 
-    X = ds[:,0:-1]
+    # remove similar samples
+    if remove_duplicates:
+        ds = np.unique(ds, axis=0)
 
+    X = ds[:,0:-1]
     y = ds[:,-1]
     y = y.reshape((y.shape[0], 1))
+
+    # remove cases where features are similar but labels differ
+    if remove_inconsistent_labels:
+        X, idx = np.unique(ds, axis=0, return_index=True)
+        y = y[idx]
 
     return X,y
 
