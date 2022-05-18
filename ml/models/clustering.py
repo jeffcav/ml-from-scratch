@@ -17,8 +17,12 @@ class KNN(AbstractModel):
         self.outputs = outputs
 
     def predict(self, x):
-        preds = []
+        predictions = []
         for xi in x:
-            dists = self.distance.measure(self.inputs_scaler.transform(xi), self.inputs)
-            preds.append(np.bincount((self.outputs[dists.argsort()[:self.k]])).argmax())
-        return np.array(preds)
+            distances = self.distance.measure(self.inputs_scaler.transform(xi), self.inputs)
+
+            indexes_of_k_nearest = distances.argsort()[:self.k]
+            classes_of_k_nearest = self.outputs[indexes_of_k_nearest]
+            predictions.append(np.bincount(classes_of_k_nearest).argmax())
+
+        return np.array(predictions)
