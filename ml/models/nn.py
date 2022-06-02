@@ -15,15 +15,11 @@ class MLPRegressor(AbstractModel):
         W = []
 
         prev_layer_width = input_width
-        #shape = (input_width, self.layers[0][NUM_NEURONS])
-
         for i in range(len(layers)):
             curr_layer_width = layers[i][NUM_NEURONS]
             shape = (prev_layer_width, curr_layer_width)
             W.append(np.full((shape), 0.5))
             prev_layer_width = curr_layer_width
-
-            #shape = (layers[i-1][NUM_NEURONS], layers[i][NUM_NEURONS])
 
         return W
 
