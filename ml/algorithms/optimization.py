@@ -117,3 +117,53 @@ class StochasticGradientDescent(AbstractGradientDescent):
             training_measurements.append(epoch_measurement)
 
         return training_measurements
+
+
+class BackpropGD(AbstractGradientDescent):
+    def __init__(self, epochs, learning_rate, regularization, batch_size=1, metrics=RMSE()) -> None:
+        super(GradientDescent, self).__init__(epochs, learning_rate, regularization, metrics)
+        self.batch_size = batch_size
+
+    def solve(self, model, inputs, outputs):
+        """
+        Runs the Backpropagation with mini-batch Stochastic Grandient
+        Descent (SGD) and modifies model parameters *during* trainning
+
+        Parameters:
+            model (ml.abstract.Model): model with initialized parameters and a predict(x) function.
+            inputs (numpy.Array): array of inputs with potentially multiple features
+            outputs (numpy.Array): array of outputs for each input
+        Returns:
+            errors (array): trainning errors at each epoch
+
+        """
+
+        training_measurements = []
+        for _ in range(self.epochs):
+            # shuffle data
+            shuffle = np.random.permutation(inputs.shape[0])
+            # inputs = inputs[shuffle]
+            # outputs = outputs[shuffle]
+
+            num_batches = inputs.shape[0]/self.batch_size
+            batches = np.array_split(shuffle, num_batches)
+
+            for batch in batches:
+                X = inputs[batch]
+                Y = outputs[batch]
+
+                prediction = model.predict(X)
+                error = Y - prediction
+
+                regularization_term = self.regularization * model.params
+                regularization_term[0,0] = 0.0
+
+                gradients = (X * error).mean(axis=0, keepdims=True) - regularization_term
+                model.params += (self.learning_rate * gradients)
+
+            # keep track of training quality
+            predictions = model.predict(inputs)
+            epoch_measurement = self.metrics.measure(outputs, predictions)
+            training_measurements.append(epoch_measurement)
+
+        return training_measurements
