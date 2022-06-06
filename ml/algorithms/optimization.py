@@ -155,11 +155,16 @@ class BackpropGD(AbstractGradientDescent):
                 prediction = model.predict(X)
                 error = Y - prediction
 
-                regularization_term = self.regularization * model.params
+                # output layer
+                regularization_term = self.regularization * model.params[layer_idx]
                 regularization_term[0,0] = 0.0
 
                 gradients = (X * error).mean(axis=0, keepdims=True) - regularization_term
                 model.params += (self.learning_rate * gradients)
+
+                # hidden layers
+                for layer_idx in range(len(model.params) - 2, -1, -1):
+                    pass
 
             # keep track of training quality
             predictions = model.predict(inputs)
