@@ -68,6 +68,15 @@ class GradientDescent(AbstractGradientDescent):
             regularization_term[0,0] = 0.0
 
             gradients = (inputs * error).mean(axis=0, keepdims=True) - regularization_term
+            print("[SHAPES] X", inputs.shape,
+            "params:", model.params.shape,
+            "grads:", gradients.shape,
+            "error", error.shape,
+            "X*error:", (inputs*error).shape,
+            "reg", regularization_term.shape,
+            "xerror mean:", (inputs*error).mean(axis=0, keepdims=True).shape,
+            "lr*grads:", (self.learning_rate * gradients).shape)
+
             model.params += self.learning_rate * gradients
 
             # keep track of training quality
@@ -121,7 +130,7 @@ class StochasticGradientDescent(AbstractGradientDescent):
 
 class BackpropGD(AbstractGradientDescent):
     def __init__(self, epochs, learning_rate, regularization, batch_size=1, metrics=RMSE()) -> None:
-        super(GradientDescent, self).__init__(epochs, learning_rate, regularization, metrics)
+        super(BackpropGD, self).__init__(epochs, learning_rate, regularization, metrics)
         self.batch_size = batch_size
 
     def solve(self, model, inputs, outputs):
@@ -140,11 +149,8 @@ class BackpropGD(AbstractGradientDescent):
 
         training_measurements = []
         for _ in range(self.epochs):
-            # shuffle data
+            # shuffle and batch input data
             shuffle = np.random.permutation(inputs.shape[0])
-            # inputs = inputs[shuffle]
-            # outputs = outputs[shuffle]
-
             num_batches = inputs.shape[0]/self.batch_size
             batches = np.array_split(shuffle, num_batches)
 
@@ -154,17 +160,45 @@ class BackpropGD(AbstractGradientDescent):
 
                 prediction = model.predict(X)
                 error = Y - prediction
-
+                
                 # output layer
-                regularization_term = self.regularization * model.params[layer_idx]
+                output_layer_idx = len(model.params) - 1
+                regularization_term = self.regularization * model.params[output_layer_idx]
                 regularization_term[0,0] = 0.0
 
-                gradients = (X * error).mean(axis=0, keepdims=True) - regularization_term
-                model.params += (self.learning_rate * gradients)
+                gradients = (X * error).mean(axis=0, keepdims=True) - regularization_term.T
 
-                # hidden layers
-                for layer_idx in range(len(model.params) - 2, -1, -1):
-                    pass
+                # print("[SHAPES] X:", X.shape, 
+                #     "params:", model.params[output_layer_idx].shape,
+                #     "gradients:", gradients.shape,
+                #     "error:", error.shape,
+                #     "X*error:", (X*error).shape,
+                #     "reg", regularization_term.T.shape,
+                #     "xerror mean:", (X*error).mean(axis=0, keepdims=True).shape,
+                #     "lr*grads:", (self.learning_rate * gradients).shape)
+
+                model.params[output_layer_idx] += ((self.learning_rate * gradients).T)
+                
+                # grads.append(gradients)
+                # for hidden_layer_idx in range(output_layer_idx - 1, -1, -1):
+                #     outputs_from_next_layer = model.outputs[hidden_layer_idx+1]
+                    
+                #     # needed?
+                #     if hidden_layer_idx == (output_layer_idx - 1):
+                #         delta = error * model.params[output_layer_idx]
+                #     else:
+                #         pass
+
+                #     # output layer
+                #     regularization_term = self.regularization * model.params[hidden_layer_idx]
+                #     regularization_term[0,0] = 0.0
+
+                #     u = model.linear_outputs[hidden_layer_idx]
+                #     grad_u = model.layers[hidden_layer_idx][1].grad(u)
+
+                #     gradient = grad_u * 
+                #     #model.inputs[hidden_layer_idx] (X * error).mean(axis=0, keepdims=True) - regularization_term
+                #     model.params[hidden_layer_idx] += (self.learning_rate * gradients)
 
             # keep track of training quality
             predictions = model.predict(inputs)
