@@ -122,9 +122,9 @@ class StochasticGradientDescent(AbstractGradientDescent):
         return training_measurements
 
 
-class BackpropGD(AbstractGradientDescent):
+class BackpropSGD(AbstractGradientDescent):
     def __init__(self, epochs, learning_rate, regularization, batch_size=1, metrics=RMSE()) -> None:
-        super(BackpropGD, self).__init__(epochs, learning_rate, regularization, metrics)
+        super(BackpropSGD, self).__init__(epochs, learning_rate, regularization, metrics)
         self.batch_size = batch_size
 
     def backprop_output_layer(self, x, y, y_estimated, weights):
@@ -167,6 +167,7 @@ class BackpropGD(AbstractGradientDescent):
 
         training_measurements = []
         for _ in range(self.epochs):
+
             # shuffle and batch input data
             shuffle = np.random.permutation(inputs.shape[0])
             num_batches = inputs.shape[0]/self.batch_size
@@ -181,14 +182,13 @@ class BackpropGD(AbstractGradientDescent):
                 # feedforward
                 predictions = model.predict(X)
 
+                # compute gradients of the output layer
                 output_layer_idx = len(model.params) - 1
                 i = model.inputs[output_layer_idx]
                 step, delta = self.backprop_output_layer(i, Y, predictions, model.params[output_layer_idx])
-
                 steps.put(step)
-                
-                # model.params[output_layer_idx] += step
 
+                # compute gradients of the hidden layers
                 for layer_idx in range(output_layer_idx - 1, -1, -1):
                     layer_inputs = model.inputs[layer_idx]
                     layer_linear_outputs = model.linear_outputs[layer_idx]
@@ -198,14 +198,13 @@ class BackpropGD(AbstractGradientDescent):
                                     layer_inputs, delta,
                                     model.params[layer_idx],
                                     model.params[layer_idx+1])
-
                     steps.put(step)
-                    # model.params[layer_idx] += step
 
+                # update weights
                 for layer_idx in range(output_layer_idx, -1, -1):
                     model.params[layer_idx] += steps.get()
 
-            # keep track of training quality
+            # measure train error
             predictions = model.predict(inputs)
             epoch_measurement = self.metrics.measure(outputs, predictions)
             training_measurements.append(epoch_measurement)

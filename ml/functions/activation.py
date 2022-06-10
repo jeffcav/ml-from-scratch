@@ -31,3 +31,6 @@ class Relu:
         # I found this is faster
         # than using np.maximum
         return (abs(x) + x) / 2
+    
+    def grad(self, x):
+        return np.greater(x, 0).astype(int)

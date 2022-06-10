@@ -4,11 +4,12 @@ from .base import AbstractModel
 NUM_NEURONS_IDX=0
 ACTIV_FUNC_IDX=1
 
-class MLPRegressor(AbstractModel):
-    def __init__(self, layers, input_width, solver):
-        super(MLPRegressor, self).__init__(None)
+class MLP(AbstractModel):
+    def __init__(self, layers, input_width, solver, is_classifier=False):
+        super(MLP, self).__init__(None)
         self.solver = solver
         self.layers = layers
+        self.is_classifier = is_classifier
         self.params = self.create_layers(self.layers, input_width)
 
     def create_layers(self, layers, input_width):
@@ -31,7 +32,7 @@ class MLPRegressor(AbstractModel):
         self.trained = True
         return errors
 
-    def predict(self, x):
+    def predict_proba(self, x):
         if not self.trained:
             self.inputs = []
             self.linear_outputs = []
@@ -62,3 +63,10 @@ class MLPRegressor(AbstractModel):
                 self.nonlinear_outputs.append(z)
 
         return z
+
+    def predict(self, x):
+        y = self.predict_proba(x)
+
+        if self.trained and self.is_classifier:
+            return np.round(y)
+        return y
