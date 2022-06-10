@@ -12,9 +12,12 @@ class MLP(AbstractModel):
         self.layers = layers
         
         self.loss = loss
-        if loss is CrossEntropyLoss:
+
+        # loss can be wither MeanSquareError or CrossEntropy
+        if loss == CrossEntropyLoss:
             self.is_classifier = True
-        self.is_classifier = False
+        else:
+            self.is_classifier = False
 
     def create_layers(self, layers, input_width):
         W = []
@@ -30,6 +33,11 @@ class MLP(AbstractModel):
         return W
 
     def fit(self, inputs, outputs, test_inputs=None, test_outputs=None):
+        if self.is_classifier and outputs.shape[1]>1:
+            self.is_multiclass=True
+        else:
+            self.is_multiclass = False
+
         input_width = inputs.shape[1]
         self.params = self.create_layers(self.layers, input_width)
 
@@ -78,6 +86,7 @@ class MLP(AbstractModel):
     def predict(self, x):
         y = self.predict_proba(x)
 
-        if self.trained and self.is_classifier:
+        if self.trained and self.is_classifier and not self.is_multiclass:
             return np.round(y)
+
         return y
