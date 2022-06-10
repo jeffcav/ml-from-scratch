@@ -7,6 +7,10 @@ class BinaryAccuracy(AbstractMeasure):
         y_estimated = np.round(y_estimated)
         return np.mean(np.round(y_truth) == np.round(y_estimated))
 
+class ClassificationError(AbstractMeasure):
+    def measure(self, y_truth, y_estimated):
+        return np.mean(np.round(y_truth) != np.round(y_estimated))
+
 class Recall(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
         y_estimated = np.round(y_estimated)

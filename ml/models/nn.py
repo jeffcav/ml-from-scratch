@@ -1,16 +1,20 @@
 import numpy as np
 from .base import AbstractModel
+from ..functions.loss import MeanSquareErrorLoss, CrossEntropyLoss
 
 NUM_NEURONS_IDX=0
 ACTIV_FUNC_IDX=1
 
 class MLP(AbstractModel):
-    def __init__(self, layers, input_width, solver, is_classifier=False):
+    def __init__(self, layers, solver, loss=MeanSquareErrorLoss):
         super(MLP, self).__init__(None)
         self.solver = solver
         self.layers = layers
-        self.is_classifier = is_classifier
-        self.params = self.create_layers(self.layers, input_width)
+        
+        self.loss = loss
+        if loss is CrossEntropyLoss:
+            self.is_classifier = True
+        self.is_classifier = False
 
     def create_layers(self, layers, input_width):
         W = []
@@ -26,8 +30,14 @@ class MLP(AbstractModel):
         return W
 
     def fit(self, inputs, outputs, test_inputs=None, test_outputs=None):
+        input_width = inputs.shape[1]
+        self.params = self.create_layers(self.layers, input_width)
+
         inputs = np.c_[np.ones(inputs.shape[0]), inputs]
-        test_inputs = np.c_[np.ones(test_inputs.shape[0]), test_inputs]
+        
+        if test_inputs is not None:
+            test_inputs = np.c_[np.ones(test_inputs.shape[0]), test_inputs]
+
         train_err, test_err = self.solver.solve(self, inputs, outputs, test_inputs, test_outputs)
 
         self.trained = True
@@ -54,7 +64,7 @@ class MLP(AbstractModel):
             # during training, so we can more easily backpropagate error
             if not self.trained:
                 self.inputs.append(z)
-
+            
             u = z @ W
             if not self.trained:
                 self.linear_outputs.append(u)

@@ -159,10 +159,15 @@ class BackpropSGD(AbstractGradientDescent):
         regularization_term = self.regularization * weights
         regularization_term[0,0] = 0.0
 
-        mean_xerror = (x * delta).mean(axis=0, keepdims=True)
+        # accumulate error for all outputs if multivariate
+        accumulated_delta = delta.sum(axis=1, keepdims=True)
+
+        mean_xerror = (x * accumulated_delta).mean(axis=0, keepdims=True)
 
         adjust = mean_xerror.T - regularization_term
         step = (self.learning_rate * adjust) + (self.momentum * last_step)
+        
+        # FIXME: should we return delta or accumulated_delta?
         return step, delta
 
     def backprop_hidden_layer(self, func, linear_output, input, delta_nxt_layer, weights, weights_nxt_layer, last_step):
@@ -212,7 +217,7 @@ class BackpropSGD(AbstractGradientDescent):
                 # compute gradients of the output layer
                 output_layer_idx = len(model.params) - 1
                 i = model.inputs[output_layer_idx]
-                step, delta = self.backprop_output_layer(i, Y, 
+                step, delta = self.backprop_output_layer(i, Y,
                                                     predictions, model.params[output_layer_idx], 
                                                     steps[output_layer_idx])
                 steps[output_layer_idx] = step
