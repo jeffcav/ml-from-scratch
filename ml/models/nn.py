@@ -17,6 +17,7 @@ class MLPRegressor(AbstractModel):
         prev_layer_width = input_width
         for i in range(len(layers)):
             layer_width = layers[i][NUM_NEURONS_IDX]
+            
             layer_weights = np.random.rand(prev_layer_width + 1, layer_width) # +1 for bias
             prev_layer_width = layer_width
             

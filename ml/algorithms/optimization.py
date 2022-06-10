@@ -2,6 +2,7 @@ import numpy as np
 from abc import abstractmethod
 
 from .. import models
+from ..models.nn import ACTIV_FUNC_IDX
 from .. functions.metrics.regression import RMSE
 
 class AbstractSolver:
@@ -68,14 +69,6 @@ class GradientDescent(AbstractGradientDescent):
             regularization_term[0,0] = 0.0
 
             gradients = (inputs * error).mean(axis=0, keepdims=True) - regularization_term
-            print("[SHAPES] X", inputs.shape,
-            "params:", model.params.shape,
-            "grads:", gradients.shape,
-            "error", error.shape,
-            "X*error:", (inputs*error).shape,
-            "reg", regularization_term.shape,
-            "xerror mean:", (inputs*error).mean(axis=0, keepdims=True).shape,
-            "lr*grads:", (self.learning_rate * gradients).shape)
 
             model.params += self.learning_rate * gradients
 
@@ -133,6 +126,36 @@ class BackpropGD(AbstractGradientDescent):
         super(BackpropGD, self).__init__(epochs, learning_rate, regularization, metrics)
         self.batch_size = batch_size
 
+    def backprop_output_layer(self, x, y, y_estimated, weights):
+        delta = y - y_estimated
+
+        regularization_term = self.regularization * weights
+        regularization_term[0,0] = 0.0
+
+        mean_xerror = (x * delta).mean(axis=0, keepdims=True)
+        adjust = mean_xerror.T - regularization_term
+        step = (self.learning_rate * adjust)
+
+        return step, delta
+
+    def backprop_hidden_layer(self, func, linear_output, input, delta_nxt_layer, weights, weights_nxt_layer):
+        grad = func.grad(linear_output)
+
+        print("[SHAPES]\n\t",
+            "grad:", grad.shape,
+            "delta_nxt_layer:", delta_nxt_layer.shape,
+            "weights_nxt_layer:", weights_nxt_layer.shape
+        )
+
+        delta = grad * (delta_nxt_layer @ weights_nxt_layer[1:,:].T)
+
+        regularization_term = self.regularization * weights
+        regularization_term[0,0] = 0.0
+
+        step = self.learning_rate*(input.T@delta)
+
+        return step, delta
+
     def solve(self, model, inputs, outputs):
         """
         Runs the Backpropagation with mini-batch Stochastic Grandient
@@ -158,47 +181,24 @@ class BackpropGD(AbstractGradientDescent):
                 X = inputs[batch]
                 Y = outputs[batch]
 
-                prediction = model.predict(X)
-                error = Y - prediction
-                
-                # output layer
+                # feedforward
+                predictions = model.predict(X)
+
                 output_layer_idx = len(model.params) - 1
-                regularization_term = self.regularization * model.params[output_layer_idx]
-                regularization_term[0,0] = 0.0
+                i = model.inputs[output_layer_idx]
+                step, delta = self.backprop_output_layer(i, Y, predictions, model.params[output_layer_idx])
+                model.params[output_layer_idx] += step
 
-                gradients = (X * error).mean(axis=0, keepdims=True) - regularization_term.T
+                for layer_idx in range(output_layer_idx - 1, -1, -1):
+                    layer_inputs = model.inputs[layer_idx]
+                    layer_linear_outputs = model.linear_outputs[layer_idx]
+                    func = model.layers[layer_idx][ACTIV_FUNC_IDX]
 
-                # print("[SHAPES] X:", X.shape, 
-                #     "params:", model.params[output_layer_idx].shape,
-                #     "gradients:", gradients.shape,
-                #     "error:", error.shape,
-                #     "X*error:", (X*error).shape,
-                #     "reg", regularization_term.T.shape,
-                #     "xerror mean:", (X*error).mean(axis=0, keepdims=True).shape,
-                #     "lr*grads:", (self.learning_rate * gradients).shape)
-
-                model.params[output_layer_idx] += ((self.learning_rate * gradients).T)
-                
-                # grads.append(gradients)
-                # for hidden_layer_idx in range(output_layer_idx - 1, -1, -1):
-                #     outputs_from_next_layer = model.outputs[hidden_layer_idx+1]
-                    
-                #     # needed?
-                #     if hidden_layer_idx == (output_layer_idx - 1):
-                #         delta = error * model.params[output_layer_idx]
-                #     else:
-                #         pass
-
-                #     # output layer
-                #     regularization_term = self.regularization * model.params[hidden_layer_idx]
-                #     regularization_term[0,0] = 0.0
-
-                #     u = model.linear_outputs[hidden_layer_idx]
-                #     grad_u = model.layers[hidden_layer_idx][1].grad(u)
-
-                #     gradient = grad_u * 
-                #     #model.inputs[hidden_layer_idx] (X * error).mean(axis=0, keepdims=True) - regularization_term
-                #     model.params[hidden_layer_idx] += (self.learning_rate * gradients)
+                    step, delta = self.backprop_hidden_layer(func, layer_linear_outputs,
+                                    layer_inputs, delta,
+                                    model.params[layer_idx],
+                                    model.params[layer_idx+1])
+                    model.params[layer_idx] += step
 
             # keep track of training quality
             predictions = model.predict(inputs)
