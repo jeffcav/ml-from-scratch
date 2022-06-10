@@ -15,6 +15,10 @@ class MulticlassClassificationError(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
         return np.mean(np.argmax(y_truth, axis=1) != np.argmax(y_estimated, axis=1))
 
+class MulticlassAccuracy(AbstractMeasure):
+    def measure(self, y_truth, y_estimated):
+        return np.mean(np.argmax(y_truth, axis=1) == np.argmax(y_estimated, axis=1))
+
 class Recall(AbstractMeasure):
     def measure(self, y_truth, y_estimated):
         y_estimated = np.round(y_estimated)

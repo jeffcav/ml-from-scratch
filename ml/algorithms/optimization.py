@@ -156,21 +156,22 @@ class BackpropSGD(AbstractGradientDescent):
     def backprop_output_layer(self, x, y, y_estimated, weights, last_step):
         delta = y - y_estimated
 
-        regularization_term = self.regularization * weights
-        regularization_term[0,0] = 0.0
-
         # accumulate error for all outputs if multivariate
         accumulated_delta = delta.sum(axis=1, keepdims=True)
 
         mean_xerror = (x * accumulated_delta).mean(axis=0, keepdims=True)
-
-        adjust = mean_xerror.T - regularization_term
-        step = (self.learning_rate * adjust) + (self.momentum * last_step)
         
+        #print(f"SHAPES (output)\n\tdelta:{delta.shape}, deltaacc:{accumulated_delta.shape}")
+
+        step = (self.learning_rate * mean_xerror.T) + (self.momentum * last_step)
+
 
         return step, delta
 
     def backprop_hidden_layer(self, func, linear_output, input, delta_nxt_layer, weights, weights_nxt_layer, last_step):
+        
+        #print(f"SHAPES (hidden):\n\tlinear_output={linear_output.shape} delta_nxt_layer={delta_nxt_layer.shape} weights_nxt_layer={weights_nxt_layer.shape}")
+
         grad = func.grad(linear_output)
 
         delta = grad * (delta_nxt_layer @ weights_nxt_layer[1:,:].T)
@@ -178,7 +179,8 @@ class BackpropSGD(AbstractGradientDescent):
         regularization_term = self.regularization * weights
         regularization_term[0,0] = 0.0
 
-        step = self.learning_rate*(input.T@delta) + (self.momentum * last_step)
+        #print(f"SHAPE: input.T={input.T.shape}, delta={delta.shape}, regulariz={regularization_term.shape}")
+        step = (self.learning_rate * (input.T @ delta) ) + (self.momentum * last_step)
 
         return step, delta
 

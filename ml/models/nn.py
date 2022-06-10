@@ -78,8 +78,6 @@ class MLP(AbstractModel):
                 self.linear_outputs.append(u)
 
             z = f(u)
-            if not self.trained:
-                self.nonlinear_outputs.append(z)
 
         return z
 
