@@ -167,7 +167,7 @@ class BackpropSGD(AbstractGradientDescent):
         adjust = mean_xerror.T - regularization_term
         step = (self.learning_rate * adjust) + (self.momentum * last_step)
         
-        # FIXME: should we return delta or accumulated_delta?
+
         return step, delta
 
     def backprop_hidden_layer(self, func, linear_output, input, delta_nxt_layer, weights, weights_nxt_layer, last_step):
