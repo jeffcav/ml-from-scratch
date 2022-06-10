@@ -1,3 +1,4 @@
+import queue
 import numpy as np
 from abc import abstractmethod
 
@@ -141,12 +142,6 @@ class BackpropGD(AbstractGradientDescent):
     def backprop_hidden_layer(self, func, linear_output, input, delta_nxt_layer, weights, weights_nxt_layer):
         grad = func.grad(linear_output)
 
-        print("[SHAPES]\n\t",
-            "grad:", grad.shape,
-            "delta_nxt_layer:", delta_nxt_layer.shape,
-            "weights_nxt_layer:", weights_nxt_layer.shape
-        )
-
         delta = grad * (delta_nxt_layer @ weights_nxt_layer[1:,:].T)
 
         regularization_term = self.regularization * weights
@@ -181,13 +176,18 @@ class BackpropGD(AbstractGradientDescent):
                 X = inputs[batch]
                 Y = outputs[batch]
 
+                steps = queue.Queue()
+
                 # feedforward
                 predictions = model.predict(X)
 
                 output_layer_idx = len(model.params) - 1
                 i = model.inputs[output_layer_idx]
                 step, delta = self.backprop_output_layer(i, Y, predictions, model.params[output_layer_idx])
-                model.params[output_layer_idx] += step
+
+                steps.put(step)
+                
+                # model.params[output_layer_idx] += step
 
                 for layer_idx in range(output_layer_idx - 1, -1, -1):
                     layer_inputs = model.inputs[layer_idx]
@@ -198,7 +198,12 @@ class BackpropGD(AbstractGradientDescent):
                                     layer_inputs, delta,
                                     model.params[layer_idx],
                                     model.params[layer_idx+1])
-                    model.params[layer_idx] += step
+
+                    steps.put(step)
+                    # model.params[layer_idx] += step
+
+                for layer_idx in range(output_layer_idx, -1, -1):
+                    model.params[layer_idx] += steps.get()
 
             # keep track of training quality
             predictions = model.predict(inputs)
