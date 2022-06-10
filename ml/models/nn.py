@@ -25,12 +25,13 @@ class MLP(AbstractModel):
             W.append(layer_weights)
         return W
 
-    def fit(self, inputs, outputs):
+    def fit(self, inputs, outputs, test_inputs=None, test_outputs=None):
         inputs = np.c_[np.ones(inputs.shape[0]), inputs]
-        errors = self.solver.solve(self, inputs, outputs)
+        test_inputs = np.c_[np.ones(test_inputs.shape[0]), test_inputs]
+        train_err, test_err = self.solver.solve(self, inputs, outputs, test_inputs, test_outputs)
 
         self.trained = True
-        return errors
+        return train_err, test_err
 
     def predict_proba(self, x):
         if not self.trained:

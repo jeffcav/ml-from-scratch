@@ -7,6 +7,12 @@ class Identity:
     def grad(self, x):
         return 1
 
+    def __repr__(self):
+        return f"Identity"
+    
+    def __str__(self):
+        return f"Identity"
+
 class Sigmoid:
     def __call__(self, x):
         z = np.exp(-x)
@@ -17,6 +23,12 @@ class Sigmoid:
         sig = self.__call__(x)
         return sig - (sig*sig)
 
+    def __repr__(self):
+        return f"Sigmoid"
+    
+    def __str__(self):
+        return f"Sigmoid"
+
 class Tanh:
     def __call__(self, x):
         z = np.exp(2*x)
@@ -26,6 +38,12 @@ class Tanh:
         t = self.__call__(x)
         return 1 - (t*t)
 
+    def __repr__(self):
+        return f"Tanh"
+    
+    def __str__(self):
+        return f"Tanh"
+
 class Relu:
     def __call__(self, x):
         # I found this is faster
@@ -34,3 +52,10 @@ class Relu:
     
     def grad(self, x):
         return np.greater(x, 0).astype(int)
+
+    def __repr__(self):
+        return f"ReLU"
+    
+    def __str__(self):
+        return f"ReLU"
+
