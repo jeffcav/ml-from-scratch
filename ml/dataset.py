@@ -1,8 +1,12 @@
 import math
 import numpy as np
 
-def load_csv(csv_filename, delimiter=',', remove_duplicates=False, remove_inconsistent_labels=False):
+def load_csv(csv_filename, no_output=False, delimiter=',', remove_duplicates=False, remove_inconsistent_labels=False):
     ds = np.genfromtxt(csv_filename, delimiter=delimiter)
+
+    # returns X=ds,y=None
+    if no_output:
+        return ds, None
 
     # remove similar samples
     if remove_duplicates:
