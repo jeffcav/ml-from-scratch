@@ -48,7 +48,7 @@ class KMeans(AbstractModel):
         self.centroids = initial_centroids.reshape(self.num_clusters, 1, num_features)
 
         for i in range(self.max_iter):
-            clusters = [[] for _ in range(self.num_clusters)]
+            self.clusters = [[] for _ in range(self.num_clusters)]
 
             # assign samples to closest centroid
             distances = self.distance.measure(inputs, self.centroids, axis=2)
@@ -56,12 +56,12 @@ class KMeans(AbstractModel):
 
             # fill clusters with sample indexes
             for sample_idx, closest_centroid in enumerate(closest_centroid_idxs.T):
-                clusters[closest_centroid[0]].append(sample_idx)
+                self.clusters[closest_centroid[0]].append(sample_idx)
 
             # update centroids
             old_centroids = self.centroids.copy()
             for cluster_idx in range(self.num_clusters):
-                self.centroids[cluster_idx] = np.mean(inputs[clusters[cluster_idx]], axis=0)
+                self.centroids[cluster_idx] = np.mean(inputs[self.clusters[cluster_idx]], axis=0)
 
             # record error and centroids in current iteration
             current_err = self.quantization_error(inputs)
@@ -82,3 +82,28 @@ class KMeans(AbstractModel):
         norm = np.linalg.norm(x - self.centroids, axis=1)
         return np.sum(norm**2)
 
+    def db_index(self, inputs):
+
+        mini_delta = np.zeros(self.num_clusters)
+        for k in range(self.num_clusters):
+            mini_delta[k] = np.mean(EuclideanDistance().measure(inputs[self.clusters[k]], self.centroids[k], axis=0))
+
+        big_delta = np.zeros((self.num_clusters, self.num_clusters))
+        for ki in range(self.num_clusters):
+            for kj in range(self.num_clusters):
+                if ki != kj:
+                    big_delta[ki, kj] = EuclideanDistance().measure(self.centroids[ki], self.centroids[kj], axis=1)
+
+        db = 0
+        for ki in range(self.num_clusters):
+            max = 0
+            for kj in range(self.num_clusters):
+                if ki != kj:                
+                    current = (mini_delta[ki] + mini_delta[kj])/big_delta[ki, kj]
+                    if current > max:
+                        max = current
+            db += max
+        return db/self.num_clusters
+            
+        
+        return 
