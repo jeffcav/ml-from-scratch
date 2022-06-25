@@ -83,22 +83,24 @@ class KMeans(AbstractModel):
         return np.sum(norm**2)
 
     def db_index(self, inputs):
-
         mini_delta = np.zeros(self.num_clusters)
-        for k in range(self.num_clusters):
-            mini_delta[k] = np.mean(EuclideanDistance().measure(inputs[self.clusters[k]], self.centroids[k], axis=0))
-
         big_delta = np.zeros((self.num_clusters, self.num_clusters))
+
         for ki in range(self.num_clusters):
+            dif = inputs[self.clusters[ki]] - self.centroids[ki][0]
+            norm = np.linalg.norm(dif, axis=1, keepdims=True)
+            mini_delta[ki] = (np.mean(norm, axis=1, keepdims=True))[0]
+
             for kj in range(self.num_clusters):
                 if ki != kj:
-                    big_delta[ki, kj] = EuclideanDistance().measure(self.centroids[ki], self.centroids[kj], axis=1)
+                    big_delta[ki, kj] = EuclideanDistance().measure(self.centroids[ki][0], self.centroids[kj][0], axis=0)
 
         db = 0
         for ki in range(self.num_clusters):
             max = 0
+
             for kj in range(self.num_clusters):
-                if ki != kj:                
+                if ki != kj:
                     current = (mini_delta[ki] + mini_delta[kj])/big_delta[ki, kj]
                     if current > max:
                         max = current
