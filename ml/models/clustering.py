@@ -1,9 +1,5 @@
-from calendar import c
-from random import sample
 import numpy as np
 from .base import AbstractModel
-
-import matplotlib.pyplot as plt
 
 from ml.functions.distance import EuclideanDistance
 from ml.algorithms.normalization import IdentityScaler
@@ -73,7 +69,6 @@ class KMeans(AbstractModel):
             self.output_centroids.append(self.centroids)
 
             if self.is_converged(old_centroids, self.centroids):
-                print("Solution converged.")
                 break
 
         self.trained = True
@@ -81,17 +76,9 @@ class KMeans(AbstractModel):
 
     def is_converged(self, old_centroids, curr_centroids):
         distances = [self.distance.measure(old_centroids[i, 0], curr_centroids[i, 0], axis=0) for i in range(self.num_clusters)]
-        
-        if np.sum(distances) == 0:
-            return True
-        else:
-            return False
+        return (np.sum(distances) == 0)
 
     def quantization_error(self, x):
         norm = np.linalg.norm(x - self.centroids, axis=1)
         return np.sum(norm**2)
 
-    def db_index(self, inputs):
-        pass
-        # mini_delta = np.abs(inputs-self.centroids).
-        # return (1/self.num_clusters)
