@@ -1,8 +1,8 @@
 import numpy as np
 
 class EuclideanDistance():
-    def measure(self, a, b):
-        return np.sqrt(((a-b)**2).sum(axis=1))
+    def measure(self, a, b, axis=1):
+        return np.sqrt(((a-b)**2).sum(axis=axis))
 
 class MahalanobisDistance():
     def measure(self, x_new, x):
