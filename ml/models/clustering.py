@@ -104,6 +104,3 @@ class KMeans(AbstractModel):
                         max = current
             db += max
         return db/self.num_clusters
-            
-        
-        return 
